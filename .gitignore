@@ -1,0 +1,8 @@
+venv/
+__pycache__/
+.DS_Store
+turqore_vault/
+Turqore_Gelenler/*
+node_modules/
+dist/
+src-tauri/target/

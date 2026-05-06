@@ -1,0 +1,255 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --bg-deep: #0D0F14; 
+  --bg-chat: #11141A; 
+  --bg-panel: #1A1D26; 
+  --teal-dominant: #008080; 
+  --teal-light: #00BCCF; 
+  --text-main: #E2E8F0;
+  --text-muted: #94A3B8;
+}
+
+body { margin: 0; font-family: 'Inter', sans-serif; background-color: var(--bg-deep); color: var(--text-main); -webkit-font-smoothing: antialiased; }
+.app-container { display: flex; height: 100vh; width: 100vw; overflow: hidden; }
+
+/* --- SIDEBAR: SADECE GEÇMİŞ --- */
+.sidebar { 
+  width: 220px; 
+  min-width: 220px;
+  /* Komple turkuaz yerine koyu, gizemli ve derin bir arkaplan (Dark Mode) */
+  background: var(--bg-panel); 
+  /* Sağ tarafa çok hafif bir sınır ekleyerek chat alanından ayırıyoruz */
+  border-right: 1px solid rgba(255, 255, 255, 0.03);
+  padding: 20px; 
+  display: flex; 
+  flex-direction: column; 
+  /* Sidebar'ı mutlak konuma alıp SADECE kaydırma animasyonu veriyoruz (Genişlik ASLA anime edilmez) */
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  transform: translateX(0);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s;
+  z-index: 100;
+  /* Sağ köşeleri yuvarlaştırarak modern bir 'yüzen panel' hissi veriyoruz */
+  border-top-right-radius: 24px;
+  border-bottom-right-radius: 24px;
+  box-shadow: 5px 0 30px rgba(0,0,0,0.3); /* Yüzen panel hissiyatını artırdık */
+}
+.sidebar.closed { 
+  /* Genişliği daraltmıyoruz, sadece ekran dışına kaydırıyoruz */
+  transform: translateX(-100%);
+  opacity: 0; 
+  pointer-events: none; 
+}
+/* Logoyu açık renk yaptık, .ai kısmını turkuazla vurguladık */
+.logo { font-size: 22px; font-weight: 800; color: var(--text-main); margin-bottom: 30px; text-align: center; letter-spacing: -0.5px; }
+.logo span { color: var(--teal-light); }
+.history-section { flex: 1; overflow-y: auto; }
+/* Geçmiş başlığını ortamla uyumlu soft bir gri yaptık */
+.history-title { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; text-align: left; padding-left: 6px; letter-spacing: 0.5px; opacity: 0.6; }
+.history-item {
+  /* 10px olan köşeleri 18px yaparak daha yumuşak (hap formuna yakın) hale getirdik */
+  padding: 10px 12px; border-radius: 18px; margin-bottom: 4px; font-size: 12.5px;
+  cursor: pointer; transition: 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  /* Metinleri okunaklı açık gri yapıyoruz */
+  color: var(--text-muted); font-weight: 500; text-align: left; background: transparent;
+}
+/* Üzerine gelince zarifçe aydınlanıp beyaz oluyor */
+.history-item:hover { background: rgba(255,255,255,0.05); color: var(--text-main); }
+.history-item:active { transform: scale(0.96); } /* Dokunsal tıklama hissi */
+/* Aktif (seçili) chat için Premium Turkuaz vurgusu */
+.history-item.active { background: rgba(0, 188, 207, 0.12); color: var(--teal-light); font-weight: 600; box-shadow: none; }
+.sidebar-footer { font-size: 10px; color: var(--text-muted); text-align: center; opacity: 0.4; margin-top: 20px; }
+
+/* --- CHAT AREA & TOP BAR --- */
+.chat-area { 
+  flex: 1; display: flex; flex-direction: column; background: var(--bg-chat); position: relative; 
+  /* Sidebar açıkken chat alanına anında boşluk bırakılır (Animasyon YOK, metinler titremeden oturur) */
+  margin-left: 260px; /* 220px width + 40px padding = 260px */
+}
+/* Sidebar kapalıyken chat alanını anında tam ekran yap */
+.sidebar.closed + .chat-area {
+  margin-left: 0;
+}
+.top-bar { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; background: var(--bg-deep); border-bottom: 1px solid rgba(255,255,255,0.03); }
+.top-bar-left { display: flex; align-items: center; }
+.toggle-btn { background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; }
+.top-bar-title { font-size: 13px; font-weight: 600; color: var(--text-muted); margin-left: 15px; }
+
+.new-chat-top-btn {
+  background: rgba(255, 255, 255, 0.05); color: var(--text-main); border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 8px 16px; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s;
+  display: flex; align-items: center; gap: 8px;
+}
+.new-chat-top-btn:hover { background: var(--teal-dominant); color: #000; border-color: var(--teal-light); }
+.new-chat-top-btn:active { transform: scale(0.95); } /* Dokunsal tıklama hissi */
+.new-chat-top-btn span { font-size: 18px; line-height: 0; }
+
+/* --- KAYDIRMA VE KONTEYNER FİX --- */
+/* Mesajların içinde olduğu ana kaydırma alanı */
+.messages-container {
+  flex: 1;
+  overflow-y: auto;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  scrollbar-gutter: stable;
+  
+  /* 🌟 SMOOTH ETKİSİ BURADA: */
+  /* Kaydırma alanı artık kutuya çarpmadığı için efekti daralttık */
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    black 0%,
+    black calc(100% - 30px), 
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    black 0%,
+    black calc(100% - 30px),
+    transparent 100%
+  );
+}
+
+/* Mesajların tek tek dizildiği liste alanı */
+.messages {
+  width: 100%;
+  /* Mesaj alanını giriş kutusuyla (input) tam hizalı olacak şekilde daralttık */
+  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  /* Normal boşluklar (Mesajların kutu altına inme sorunu çözüldü) */
+  padding: 40px 20px 20px 20px; 
+  /* ÖNEMLİ: İçerik bittiği an bitmesi için */
+  min-height: min-content; 
+}
+
+/* 🚀 OTO-KAYDIRMA HEDEFİNİ (En alttaki boş div) YUKARI İTİYORUZ:
+   Böylece otomatik kaydırmada son mesaj sisli alanın üstünde, tam görünür kalır. */
+.messages > div:last-child {
+  height: 40px;
+  flex-shrink: 0;
+}
+
+/* --- APPLE TARZI ZARİF SCROLLBAR --- */
+.messages-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.messages-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  transition: 0.3s;
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover {
+  background: var(--teal-dominant); /* Kaydırırken bizim turkuaz yansısın */
+}
+.message {
+  /* Yüzdelik genişliği kaldırdık. Artık yazılar pencereyle birlikte sürekli daralıp genleşmeyecek. */
+  width: fit-content; 
+  padding: 14px 20px; border-radius: 18px; font-size: 14.5px; line-height: 1.6; 
+  /* Metin kırılmalarını en modern ve kararlı hale getiren ayarlar */
+  word-break: break-word; overflow-wrap: anywhere;
+  animation: messageSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.message.bot { background: var(--bg-panel); align-self: flex-start; border-bottom-left-radius: 4px; max-width: 85%; } /* Mesajlar ekranı tamamen kaplamasın, nefes alsın */
+.message.user { background: var(--teal-dominant); color: #000; align-self: flex-end; border-bottom-right-radius: 4px; font-weight: 600; max-width: 85%; } /* Kullanıcı mesajları da orantılı olsun */
+.message.system { align-self: center; font-size: 12px; color: var(--teal-light); background: rgba(0,0,0,0.2); padding: 8px 15px; border-radius: 12px; }
+
+/* 🌟 Yükleniyor (Düşünüyor) Animasyonu */
+.loading-msg { opacity: 0.7; animation: messageSlideUp 0.4s ease-out forwards, pulseOpacity 1.5s infinite alternate; }
+@keyframes pulseOpacity { 0% { opacity: 0.4; } 100% { opacity: 1; } }
+
+/* --- GİRDİ ALANI & ZEKA SEVİYESİ SEÇİCİ --- */
+/* Giriş kutusunu dıştan saran kapsayıcı */
+.input-wrapper {
+  /* 🚨 İŞTE ÇÖZÜM: Kapsayıcıyı 'absolute' olmaktan çıkardık.
+     Artık ekranın en altına kendi fiziksel alanıyla diziliyor.
+     Bu sayede mesajlar ASLA kutunun arkasında kalıp gizlenemez! */
+  display: flex;
+  justify-content: center;
+  padding: 10px 20px 30px 20px; 
+  background: transparent; 
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Gerçek giriş kutusu */
+.input-area { 
+  width: 90%; max-width: 760px; background: rgba(28, 31, 38, 0.85); display: flex; align-items: center;
+  padding: 8px 12px 8px 22px; border-radius: 28px; border: 1px solid rgba(255,255,255,0.08); 
+  box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+  /* Arka planı hafif buzlu cam yapıyoruz (Glassmorphism) */
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  /* İŞTE ÇÖZÜM 2: Sadece renk ve gölge geçişleri animasyonlu, genişlik değişimi anlık! */
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s, background-color 0.3s;
+}
+.input-area:focus-within {
+  border-color: rgba(0, 188, 207, 0.4);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.5), 0 0 20px rgba(0, 188, 207, 0.15);
+  transform: translateY(-2px); /* Tıklayınca odaklanma hissi için çok hafif yukarı kalksın */
+}
+
+/* 🎨 ARTI BUTONU ANİMASYONU: Basit ve Havalı */
+.attach-btn { 
+  background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; 
+  padding-right: 15px; transition: transform 0.2s ease-in-out, color 0.2s; 
+}
+.attach-btn:hover { 
+  color: var(--teal-light); 
+  transform: scale(1.2) rotate(90deg); /* Hafif büyüme ve net dönüş */
+}
+
+/* Font-family inherit ile genel inter fontunun buraya da işlemesini garantiye aldık */
+.input-area input { flex: 1; background: none; border: none; color: #fff; outline: none; font-size: 15px; font-family: inherit; }
+
+/* MODEL SELECTOR PROFESYONELLEŞTİRME */
+.model-dropdown-container { position: relative; margin: 0 15px; }
+.model-select-trigger {
+  background: none; border: none; color: var(--text-muted); font-size: 15px; font-weight: 500;
+  cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;
+}
+.model-select-trigger:hover { color: var(--text-main); }
+.arrow-down { font-size: 10px; opacity: 0.6; }
+
+.model-menu {
+  position: absolute; bottom: 45px; left: 50%; transform: translateX(-50%);
+  background: var(--bg-panel);
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 8px;
+  display: flex; flex-direction: column; gap: 4px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); z-index: 100;
+  transform-origin: bottom center;
+  animation: menuPop 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.model-menu button {
+  background: none; border: none; color: var(--text-main); 
+  padding: 8px 16px; /* Padding azaltıldı (daha kompakt) */
+  border-radius: 8px; text-align: center; cursor: pointer; white-space: nowrap; transition: 0.2s;
+  font-family: 'Inter', sans-serif; /* Font aynı yapıldı */
+  font-size: 14px; /* Font biraz küçültüldü */
+  font-weight: 500; /* Daha zarif bir görünüm */
+}
+.model-menu button:hover { background: var(--teal-dominant); color: #000; }
+
+.send-btn { 
+  background: var(--teal-dominant); border: none; width: 40px; height: 40px; 
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: 0.2s; 
+}
+.send-btn:hover { background: var(--teal-light); transform: scale(1.05); }
+.send-icon { color: #000; font-size: 18px; margin-left: 2px; }
+
+/* --- MODERN ANİMASYONLAR (YENİ) --- */
+@keyframes messageSlideUp {
+  0% { opacity: 0; transform: translateY(15px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes menuPop {
+  0% { opacity: 0; transform: translate(-50%, 10px) scale(0.9); }
+  100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
